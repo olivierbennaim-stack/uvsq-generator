@@ -1,65 +1,347 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useCallback } from "react";
+import ThemeSuggestions from "./components/ThemeSuggestions";
+import CustomTopicInput from "./components/CustomTopicInput";
+import SubjectDisplay from "./components/SubjectDisplay";
+import CorrectionDisplay from "./components/CorrectionDisplay";
+import LoadingState from "./components/LoadingState";
+
+type Theme = { title: string; hook: string };
+type AppState = "home" | "themes" | "generating" | "subject";
+
+const MAX_RETRIES = 1;
+const RETRY_DELAY = 2000;
+
+async function fetchWithRetry<T>(
+  fetcher: () => Promise<T>,
+  retries = MAX_RETRIES
+): Promise<T> {
+  try {
+    return await fetcher();
+  } catch (err) {
+    if (retries > 0) {
+      await new Promise((r) => setTimeout(r, RETRY_DELAY));
+      return fetchWithRetry(fetcher, retries - 1);
+    }
+    throw err;
+  }
+}
 
 export default function Home() {
+  const [appState, setAppState] = useState<AppState>("home");
+  const [activeTab, setActiveTab] = useState<"suggest" | "custom">("suggest");
+
+  const [themes, setThemes] = useState<Theme[]>([]);
+  const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
+  const [themesLoading, setThemesLoading] = useState(false);
+  const [subjectLoading, setSubjectLoading] = useState(false);
+
+  const [subjectText, setSubjectText] = useState("");
+  const [correctionText, setCorrectionText] = useState("");
+  const [correctionLoading, setCorrectionLoading] = useState(false);
+
+  const [error, setError] = useState<string | null>(null);
+
+  const getAlreadySuggested = (): string[] => {
+    try {
+      const stored = sessionStorage.getItem("suggestedThemes");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const addToSuggested = (newThemes: Theme[]) => {
+    try {
+      const existing = getAlreadySuggested();
+      const titles = newThemes.map((t) => t.title);
+      const merged = Array.from(new Set([...existing, ...titles]));
+      sessionStorage.setItem("suggestedThemes", JSON.stringify(merged));
+    } catch {
+      // sessionStorage not available
+    }
+  };
+
+  const loadThemes = useCallback(async () => {
+    setThemesLoading(true);
+    setError(null);
+    setSelectedTheme(null);
+    try {
+      const already = getAlreadySuggested();
+      const data = await fetchWithRetry(async () => {
+        const res = await fetch("/api/suggest-themes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ alreadySuggested: already }),
+        });
+        if (!res.ok) throw new Error((await res.json()).error ?? "Erreur API");
+        return res.json();
+      });
+      setThemes(data.themes);
+      addToSuggested(data.themes);
+      setAppState("themes");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Le service est temporairement indisponible. Veuillez réessayer dans quelques instants."
+      );
+    } finally {
+      setThemesLoading(false);
+    }
+  }, []);
+
+  const generateSubject = useCallback(async (theme: string) => {
+    setAppState("generating");
+    setSubjectLoading(true);
+    setError(null);
+    setCorrectionText("");
+    try {
+      const data = await fetchWithRetry(async () => {
+        const res = await fetch("/api/generate-subject", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ theme }),
+        });
+        if (!res.ok) throw new Error((await res.json()).error ?? "Erreur API");
+        return res.json();
+      });
+      setSubjectText(data.subject);
+      setAppState("subject");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Le service est temporairement indisponible. Veuillez réessayer dans quelques instants."
+      );
+      setAppState(themes.length > 0 ? "themes" : "home");
+    } finally {
+      setSubjectLoading(false);
+    }
+  }, [themes.length]);
+
+  const generateCorrection = useCallback(async () => {
+    setCorrectionLoading(true);
+    setError(null);
+    try {
+      const data = await fetchWithRetry(async () => {
+        const res = await fetch("/api/generate-correction", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subjectText }),
+        });
+        if (!res.ok) throw new Error((await res.json()).error ?? "Erreur API");
+        return res.json();
+      });
+      setCorrectionText(data.correction);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Le service est temporairement indisponible. Veuillez réessayer dans quelques instants."
+      );
+    } finally {
+      setCorrectionLoading(false);
+    }
+  }, [subjectText]);
+
+  const downloadSubjectPDF = useCallback(async () => {
+    const { generatePDF, downloadPDF } = await import("./lib/pdf-generator");
+    const lines = subjectText.split("\n").filter((l) => l.trim());
+    const title = lines[0] ?? "Sujet";
+    const bodyWithoutTitle = subjectText.split("\n").slice(1).join("\n");
+    const doc = generatePDF({ title, subtitle: "Sujet d'entraînement", body: bodyWithoutTitle });
+    downloadPDF(doc, `sujet-uvsq-${Date.now()}.pdf`);
+  }, [subjectText]);
+
+  const downloadCorrectionPDF = useCallback(async () => {
+    const { generatePDF, downloadPDF } = await import("./lib/pdf-generator");
+    const lines = subjectText.split("\n").filter((l) => l.trim());
+    const title = lines[0] ?? "Corrigé";
+    const doc = generatePDF({ title, subtitle: "Corrigé modèle", body: correctionText });
+    downloadPDF(doc, `corrige-uvsq-${Date.now()}.pdf`);
+  }, [subjectText, correctionText]);
+
+  const reset = () => {
+    setAppState("home");
+    setThemes([]);
+    setSelectedTheme(null);
+    setSubjectText("");
+    setCorrectionText("");
+    setError(null);
+    setActiveTab("suggest");
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main className="min-h-screen bg-[#f8f7f4]">
+      {/* Header */}
+      <header className="border-b border-gray-200 bg-white">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="font-serif text-lg sm:text-xl font-bold text-gray-900 leading-tight">
+              Générateur UVSQ
+            </h1>
+            <p className="text-xs text-gray-500 mt-0.5">Analyse de texte — PASS/LAS</p>
+          </div>
+          {appState !== "home" && (
+            <button
+              onClick={reset}
+              className="text-sm text-[#1a365d] hover:text-[#1e3f6f] font-medium flex items-center gap-1.5 transition-colors"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+              <span>←</span>
+              Nouveau sujet
+            </button>
+          )}
+        </div>
+      </header>
+
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+        {/* Error banner */}
+        {error && (
+          <div className="mb-6 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {/* HOME */}
+        {appState === "home" && (
+          <div className="max-w-xl mx-auto">
+            <div className="text-center mb-10">
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+                Préparez votre épreuve
+              </h2>
+              <p className="text-gray-500 text-sm sm:text-base leading-relaxed">
+                Générez des sujets d&apos;examen réalistes et leurs corrigés modèles pour vous entraîner à l&apos;épreuve d&apos;analyse de texte.
+              </p>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 mb-6">
+              <button
+                onClick={() => setActiveTab("suggest")}
+                className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === "suggest"
+                    ? "border-[#1a365d] text-[#1a365d]"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Proposez-moi des thèmes
+              </button>
+              <button
+                onClick={() => setActiveTab("custom")}
+                className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === "custom"
+                    ? "border-[#1a365d] text-[#1a365d]"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                J&apos;ai mon propre sujet
+              </button>
+            </div>
+
+            {activeTab === "suggest" ? (
+              <div className="text-center">
+                <p className="text-sm text-gray-500 mb-5">
+                  L&apos;IA recherche 3 thèmes d&apos;actualité 2025-2026 adaptés à l&apos;épreuve.
+                </p>
+                <button
+                  onClick={loadThemes}
+                  disabled={themesLoading}
+                  className="px-8 py-3 bg-[#1a365d] text-white rounded-lg font-medium text-sm disabled:opacity-50 hover:bg-[#1e3f6f] transition-colors"
+                >
+                  {themesLoading ? "Recherche en cours…" : "Suggérer des thèmes"}
+                </button>
+                {themesLoading && (
+                  <div className="mt-8">
+                    <LoadingState label="Recherche de sujets d'actualité…" />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <CustomTopicInput
+                onValidate={(topic) => generateSubject(topic)}
+                loading={subjectLoading}
+              />
+            )}
+          </div>
+        )}
+
+        {/* THEMES */}
+        {appState === "themes" && (
+          <div className="max-w-xl mx-auto">
+            <div className="mb-6">
+              <h2 className="font-serif text-xl font-bold text-gray-900 mb-1">
+                Choisissez un thème
+              </h2>
+              <p className="text-sm text-gray-500">
+                Sélectionnez le sujet qui vous intéresse ou demandez d&apos;autres suggestions.
+              </p>
+            </div>
+            <ThemeSuggestions
+              themes={themes}
+              selected={selectedTheme}
+              onSelect={setSelectedTheme}
+              onOtherSuggestions={loadThemes}
+              onValidate={() => selectedTheme && generateSubject(selectedTheme)}
+              loading={themesLoading}
+            />
+            {themesLoading && (
+              <div className="mt-4">
+                <LoadingState label="Recherche de nouveaux thèmes…" />
+              </div>
+            )}
+
+            {/* Custom topic option */}
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wide">
+                Ou saisir votre propre sujet
+              </p>
+              <CustomTopicInput
+                onValidate={(topic) => generateSubject(topic)}
+                loading={subjectLoading}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* GENERATING */}
+        {appState === "generating" && (
+          <div className="max-w-xl mx-auto">
+            <LoadingState />
+          </div>
+        )}
+
+        {/* SUBJECT */}
+        {appState === "subject" && subjectText && (
+          <div className="space-y-8">
+            <SubjectDisplay
+              subjectText={subjectText}
+              onGenerateCorrection={generateCorrection}
+              onDownloadPDF={downloadSubjectPDF}
+              correctionLoading={correctionLoading}
+            />
+
+            {correctionLoading && <LoadingState label="Rédaction du corrigé modèle…" />}
+
+            {correctionText && (
+              <CorrectionDisplay
+                correctionText={correctionText}
+                onDownloadPDF={downloadCorrectionPDF}
+              />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-200 mt-16 py-6">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+          <p className="text-xs text-gray-400">
+            Outil d&apos;entraînement à l&apos;épreuve d&apos;analyse de texte UVSQ PASS/LAS — Les sujets et corrigés sont générés par IA à titre pédagogique.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </footer>
+    </main>
   );
 }
