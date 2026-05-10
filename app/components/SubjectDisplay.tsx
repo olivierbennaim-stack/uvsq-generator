@@ -5,7 +5,8 @@ import LogoOralPrepa from "./LogoOralPrepa";
 interface SubjectDisplayProps {
   subjectText: string;
   onGenerateCorrection: () => void;
-  onDownloadPDF: () => void;
+  onPrint: () => void;
+  onCopy: () => void;
   correctionLoading: boolean;
 }
 
@@ -76,7 +77,8 @@ function parseSubject(text: string) {
 export default function SubjectDisplay({
   subjectText,
   onGenerateCorrection,
-  onDownloadPDF,
+  onPrint,
+  onCopy,
   correctionLoading,
 }: SubjectDisplayProps) {
   const { title, source, bodyLines, questions } = parseSubject(subjectText);
@@ -147,11 +149,18 @@ export default function SubjectDisplay({
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-3 mt-5">
         <button
-          onClick={onDownloadPDF}
+          onClick={onPrint}
           className="flex-1 flex items-center justify-center gap-2 px-5 py-3 border border-[#4e3bf0] text-[#4e3bf0] rounded-lg font-medium text-sm hover:bg-[#4e3bf0]/5 transition-colors"
         >
           <span>📄</span>
-          Télécharger le sujet (PDF)
+          Exporter en PDF
+        </button>
+        <button
+          onClick={onCopy}
+          className="flex items-center justify-center gap-2 px-5 py-3 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:border-[#4e3bf0]/40 hover:text-[#4e3bf0] transition-colors"
+        >
+          <span>📋</span>
+          Copier
         </button>
         <button
           onClick={onGenerateCorrection}

@@ -147,22 +147,33 @@ export default function Home() {
     }
   }, [subjectText]);
 
-  const downloadSubjectPDF = useCallback(async () => {
-    const { generatePDF, downloadPDF } = await import("./lib/pdf-generator");
-    const lines = subjectText.split("\n").filter((l) => l.trim());
-    const title = lines[0] ?? "Sujet";
-    const bodyWithoutTitle = subjectText.split("\n").slice(1).join("\n");
-    const doc = generatePDF({ title, subtitle: "Sujet d'entraînement", body: bodyWithoutTitle });
-    downloadPDF(doc, `sujet-uvsq-${Date.now()}.pdf`);
-  }, [subjectText]);
+  const getSubjectTitle = useCallback(() =>
+    subjectText.split("\n").find((l) => l.trim()) ?? "Sujet"
+  , [subjectText]);
 
-  const downloadCorrectionPDF = useCallback(async () => {
-    const { generatePDF, downloadPDF } = await import("./lib/pdf-generator");
-    const lines = subjectText.split("\n").filter((l) => l.trim());
-    const title = lines[0] ?? "Corrigé";
-    const doc = generatePDF({ title, subtitle: "Corrigé modèle", body: correctionText });
-    downloadPDF(doc, `corrige-uvsq-${Date.now()}.pdf`);
-  }, [subjectText, correctionText]);
+  const getSubjectBody = useCallback(() =>
+    subjectText.split("\n").slice(1).join("\n")
+  , [subjectText]);
+
+  const openSubjectPrint = useCallback(async () => {
+    const { openPrintWindow } = await import("./lib/print-export");
+    openPrintWindow(getSubjectTitle(), "Sujet d'entraînement", getSubjectBody(), false);
+  }, [getSubjectTitle, getSubjectBody]);
+
+  const openCorrectionPrint = useCallback(async () => {
+    const { openPrintWindow } = await import("./lib/print-export");
+    openPrintWindow(getSubjectTitle(), "Corrigé modèle", correctionText, true);
+  }, [getSubjectTitle, correctionText]);
+
+  const copySubject = useCallback(async () => {
+    const { copyAsRichText } = await import("./lib/print-export");
+    copyAsRichText(getSubjectTitle(), subjectText);
+  }, [getSubjectTitle, subjectText]);
+
+  const copyCorrection = useCallback(async () => {
+    const { copyAsRichText } = await import("./lib/print-export");
+    copyAsRichText(getSubjectTitle(), correctionText);
+  }, [getSubjectTitle, correctionText]);
 
   const reset = () => {
     setAppState("home");
@@ -321,7 +332,8 @@ export default function Home() {
             <SubjectDisplay
               subjectText={subjectText}
               onGenerateCorrection={generateCorrection}
-              onDownloadPDF={downloadSubjectPDF}
+              onPrint={openSubjectPrint}
+              onCopy={copySubject}
               correctionLoading={correctionLoading}
             />
 
@@ -330,7 +342,8 @@ export default function Home() {
             {correctionText && (
               <CorrectionDisplay
                 correctionText={correctionText}
-                onDownloadPDF={downloadCorrectionPDF}
+                onPrint={openCorrectionPrint}
+                onCopy={copyCorrection}
               />
             )}
           </div>

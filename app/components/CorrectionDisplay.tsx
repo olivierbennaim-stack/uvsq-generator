@@ -4,7 +4,8 @@ import LogoOralPrepa from "./LogoOralPrepa";
 
 interface CorrectionDisplayProps {
   correctionText: string;
-  onDownloadPDF: () => void;
+  onPrint: () => void;
+  onCopy: () => void;
 }
 
 function renderCorrectionText(text: string) {
@@ -71,7 +72,7 @@ function renderCorrectionText(text: string) {
   return elements;
 }
 
-export default function CorrectionDisplay({ correctionText, onDownloadPDF }: CorrectionDisplayProps) {
+export default function CorrectionDisplay({ correctionText, onPrint, onCopy }: CorrectionDisplayProps) {
   return (
     <div className="w-full">
       <div className="bg-[#ebe9ff] border border-[#c5bffa] rounded-xl overflow-hidden">
@@ -99,13 +100,20 @@ export default function CorrectionDisplay({ correctionText, onDownloadPDF }: Cor
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="flex flex-col sm:flex-row gap-3 mt-4">
         <button
-          onClick={onDownloadPDF}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 border border-[#4e3bf0] text-[#4e3bf0] rounded-lg font-medium text-sm hover:bg-[#4e3bf0]/5 transition-colors"
+          onClick={onPrint}
+          className="flex items-center justify-center gap-2 px-5 py-3 border border-[#4e3bf0] text-[#4e3bf0] rounded-lg font-medium text-sm hover:bg-[#4e3bf0]/5 transition-colors"
         >
           <span>📄</span>
-          Télécharger le corrigé (PDF)
+          Exporter en PDF
+        </button>
+        <button
+          onClick={onCopy}
+          className="flex items-center justify-center gap-2 px-5 py-3 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:border-[#4e3bf0]/40 hover:text-[#4e3bf0] transition-colors"
+        >
+          <span>📋</span>
+          Copier
         </button>
       </div>
     </div>
