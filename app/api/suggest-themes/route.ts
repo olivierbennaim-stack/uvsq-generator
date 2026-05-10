@@ -12,17 +12,19 @@ Propose exactement 3 thèmes d'actualité (année scolaire 2025-2026, sept. 2025
 
 Utilise ta capacité de recherche web pour trouver des sujets récents et réels qui font débat.
 
-Contraintes :
+RÉPARTITION OBLIGATOIRE des 3 thèmes — respecte cet ordre exactement :
+1. Thème HORS SANTÉ (société, éducation, justice, technologie, environnement, urbanisme...)
+2. Thème HORS SANTÉ (catégorie différente du thème 1)
+3. Thème SANTÉ / MÉDECINE / BIOÉTHIQUE (médecine, corps, système de soins, éthique médicale...)
+
+Contraintes communes :
 - Chaque thème doit FAIRE DÉBAT (arguments solides pour et contre)
-- Priorité santé, médecine, bioéthique, corps, système de soins
-- Si hors santé : accessible à des étudiants en médecine 1ère année
-- Varier les catégories (santé, société, techno, environnement, éthique) — pas 2 thèmes de la même catégorie
+- Tous accessibles à des étudiants en médecine 1ère année
 - NE PAS proposer ces thèmes déjà suggérés : ${alreadySuggested.length > 0 ? alreadySuggested.join(" ; ") : "(aucun pour l'instant)"}
 
-Exemples du bon niveau de sujet (pour calibrage, NE PAS les réutiliser tels quels) :
-- Interdire les réseaux sociaux aux moins de 15 ans
-- Imposer des wagons sans enfants dans les trains
-- Rendre obligatoire le don d'organes sans possibilité de refus
+Exemples calibrants (NE PAS réutiliser tels quels) :
+- Hors santé : "Interdire les réseaux sociaux aux moins de 15 ans", "Imposer des wagons sans enfants dans les trains", "Demander une contribution de 32€ aux détenus"
+- Santé : "Rendre obligatoire le don d'organes sans possibilité de refus", "Autoriser l'euthanasie pour les mineurs atteints de maladies incurables", "Supprimer le numerus clausus en médecine"
 
 Réponds UNIQUEMENT en JSON, sans backticks markdown, sans texte avant/après :
 [
