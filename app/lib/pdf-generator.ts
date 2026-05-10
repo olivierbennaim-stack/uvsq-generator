@@ -59,13 +59,23 @@ const LINE_HEIGHT = 5.8;
 const HEADER_H = 20;
 const FOOTER_H = 12;
 
+// Ces patterns démarrent toujours un nouveau bloc même sans ligne vide avant eux
+const BLOCK_STARTERS = /^(\d+[\.\)]\s|•|►|QUESTION\s+\d+|Note méthodologique)/i;
+
 function collapseToBlocks(text: string): string[] {
   const blocks: string[] = [];
   let current: string[] = [];
+
   for (const raw of text.split("\n")) {
     const line = raw.trim();
+
     if (line === "") {
+      // Ligne vide = rupture de paragraphe
       if (current.length > 0) { blocks.push(current.join(" ")); current = []; }
+    } else if (BLOCK_STARTERS.test(line) && current.length > 0) {
+      // Début d'un item spécial => ferme le bloc courant, commence un nouveau
+      blocks.push(current.join(" "));
+      current = [line];
     } else {
       current.push(line);
     }
@@ -80,6 +90,14 @@ function blockHeight(doc: jsPDF, text: string, width: number, fontSize: number):
   return lines.length * LINE_HEIGHT;
 }
 
+const isQuestion   = (s: string) => /^\d+[\.\)]\s/.test(s);
+const isSectionHdr = (s: string) => /^QUESTION\s+\d+/i.test(s);
+const isPointDeVue = (s: string) => s.startsWith("►");
+const isBullet     = (s: string) => s.startsWith("•");
+const isNote       = (s: string) => s.startsWith("Note méthodologique");
+const isSource     = (s: string) =>
+  /^(Slate|Le Monde|Libération|Le Figaro|L'Obs|La Croix|Mediapart|Les Échos|Courrier|Le Parisien|Philosophie|Sciences)/i.test(s);
+
 export function generatePDF(options: PDFOptions): jsPDF {
   const { title, subtitle, body } = options;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -87,153 +105,141 @@ export function generatePDF(options: PDFOptions): jsPDF {
   const PW = doc.internal.pageSize.getWidth();
   const PH = doc.internal.pageSize.getHeight();
   const ML = 20;
-  const MR = 20;
-  const CW = PW - ML - MR;
-  const CONTENT_TOP = HEADER_H + 8;
-  const CONTENT_BOTTOM = PH - FOOTER_H - 4;
+  const CW = PW - ML * 2;
+  const TOP = HEADER_H + 8;
+  const BOT = PH - FOOTER_H - 4;
 
-  let y = CONTENT_TOP;
+  let y = TOP;
 
   const newPage = () => {
     addPageFooter(doc);
     doc.addPage();
     addPageHeader(doc, subtitle);
-    y = CONTENT_TOP;
+    y = TOP;
   };
 
-  const ensureSpace = (needed: number) => {
-    if (y + needed > CONTENT_BOTTOM) newPage();
+  const fit = (needed: number) => { if (y + needed > BOT) newPage(); };
+
+  const write = (
+    text: string,
+    opts: { size: number; style?: string; color?: readonly [number, number, number]; indent?: number; gap?: number }
+  ) => {
+    const { size, style = "normal", color = DARK, indent = 0, gap = 4 } = opts;
+    doc.setFont("Helvetica", style);
+    doc.setFontSize(size);
+    doc.setTextColor(...color);
+    const lines = doc.splitTextToSize(text, CW - indent);
+    const h = lines.length * LINE_HEIGHT;
+    fit(h + gap);
+    doc.text(lines, ML + indent, y);
+    y += h + gap;
   };
 
   addPageHeader(doc, subtitle);
 
-  // ── Titre ──────────────────────────────────────────────
+  // ── Titre ──
   doc.setFont("Helvetica", "bold");
-  doc.setFontSize(14);
-  doc.setTextColor(...VIOLET);
+  doc.setFontSize(15);
+  doc.setTextColor(...DARK);
   const titleLines = doc.splitTextToSize(title, CW);
-  const titleH = titleLines.length * 7;
-  ensureSpace(titleH + 8);
+  const titleH = titleLines.length * 7.5;
+  fit(titleH + 10);
   doc.text(titleLines, ML, y);
-  y += titleH + 1;
-
-  // Trait sous titre
+  y += titleH + 2;
+  // Trait de séparation fin sous le titre
   doc.setDrawColor(...VIOLET);
-  doc.setLineWidth(0.5);
+  doc.setLineWidth(0.4);
   doc.line(ML, y, ML + CW, y);
   y += 7;
 
-  // ── Corps ──────────────────────────────────────────────
+  // ── Corps ──
   const blocks = collapseToBlocks(body);
+  let inQuestionsSection = false;
 
   for (const block of blocks) {
-    const trimmed = block.trim();
-    if (!trimmed) continue;
+    const t = block.trim();
+    if (!t) continue;
 
-    const isQuestion    = /^\d+[\.\)]\s/.test(trimmed);
-    const isSectionHdr  = /^QUESTION\s+\d+/i.test(trimmed);
-    const isPointDeVue  = trimmed.startsWith("►");
-    const isBullet      = trimmed.startsWith("•");
-    const isNote        = trimmed.startsWith("Note méthodologique");
-    const isSource      = /^(Slate|Le Monde|Libération|Le Figaro|L'Obs|La Croix|Mediapart|Les Échos|Courrier|Le Parisien|Philosophie|Sciences)/i.test(trimmed);
+    // Source (italique violet sous le titre)
+    if (isSource(t)) {
+      write(t, { size: 10, style: "italic", color: VIOLET_MID, gap: 6 });
+      continue;
+    }
 
-    // ── En-tête de section (QUESTION 1 —) ──
-    if (isSectionHdr) {
-      const h = blockHeight(doc, trimmed, CW, 9);
-      ensureSpace(h + 10);
-      if (y > CONTENT_TOP + 2) y += 4;
+    // En-tête de section QUESTION X — (corrigé)
+    if (isSectionHdr(t)) {
+      const h = blockHeight(doc, t, CW - 4, 9);
+      fit(h + 12);
+      y += 3;
       doc.setFillColor(...VIOLET_LIGHT);
       doc.roundedRect(ML, y - 5, CW, h + 7, 2, 2, "F");
       doc.setFont("Helvetica", "bold");
       doc.setFontSize(9);
       doc.setTextColor(...VIOLET);
-      const lines = doc.splitTextToSize(trimmed, CW - 4);
-      doc.text(lines, ML + 4, y);
-      y += h + 6;
+      doc.text(doc.splitTextToSize(t, CW - 4), ML + 4, y);
+      y += h + 7;
       continue;
     }
 
-    // ── Source (italique violet) ──
-    if (isSource) {
-      const h = blockHeight(doc, trimmed, CW, 10);
-      ensureSpace(h + 4);
-      doc.setFont("Helvetica", "italic");
-      doc.setFontSize(10);
-      doc.setTextColor(...VIOLET_MID);
-      const lines = doc.splitTextToSize(trimmed, CW);
-      doc.text(lines, ML, y);
-      y += h + 5;
-      continue;
-    }
-
-    // ── Questions d'analyse (numérotées) ──
-    if (isQuestion) {
-      const h = blockHeight(doc, trimmed, CW, 10.5);
-      ensureSpace(h + 4);
+    // Séparateur avant la section questions (sujet)
+    if (isQuestion(t) && !inQuestionsSection) {
+      inQuestionsSection = true;
+      fit(14);
+      y += 2;
+      doc.setDrawColor(...VIOLET);
+      doc.setLineWidth(0.3);
+      doc.line(ML, y, ML + CW, y);
+      y += 3;
+      // Label "Questions d'analyse"
       doc.setFont("Helvetica", "bold");
-      doc.setFontSize(10.5);
-      doc.setTextColor(...DARK);
-      const lines = doc.splitTextToSize(trimmed, CW);
-      doc.text(lines, ML, y);
-      y += h + 3;
-      continue;
-    }
-
-    // ── Point de vue ──
-    if (isPointDeVue) {
-      const h = blockHeight(doc, trimmed, CW, 10.5);
-      ensureSpace(h + 4);
-      doc.setFont("Helvetica", "bold");
-      doc.setFontSize(10.5);
+      doc.setFontSize(8);
       doc.setTextColor(...VIOLET);
-      const lines = doc.splitTextToSize(trimmed, CW);
-      doc.text(lines, ML, y);
-      y += h + 3;
+      doc.text("QUESTIONS D'ANALYSE", ML, y);
+      y += 6;
+    }
+
+    // Question numérotée
+    if (isQuestion(t)) {
+      write(t, { size: 10.5, style: "bold", color: DARK, gap: 3 });
       continue;
     }
 
-    // ── Bullet ──
-    if (isBullet) {
-      const innerText = trimmed.slice(1).trim();
-      const h = blockHeight(doc, innerText, CW - 6, 10.5);
-      ensureSpace(h + 3);
+    // Point de vue (►)
+    if (isPointDeVue(t)) {
+      write(t, { size: 10.5, style: "bold", color: VIOLET, gap: 3 });
+      continue;
+    }
+
+    // Bullet (•)
+    if (isBullet(t)) {
+      const inner = t.slice(1).trim();
+      const h = blockHeight(doc, inner, CW - 6, 10.5);
+      fit(h + 3);
       doc.setFont("Helvetica", "normal");
       doc.setFontSize(10.5);
       doc.setTextColor(...VIOLET);
       doc.text("•", ML, y);
       doc.setTextColor(...DARK);
-      const lines = doc.splitTextToSize(innerText, CW - 6);
-      doc.text(lines, ML + 5, y);
+      doc.text(doc.splitTextToSize(inner, CW - 6), ML + 5, y);
       y += h + 3;
       continue;
     }
 
-    // ── Note méthodologique ──
-    if (isNote) {
-      const h = blockHeight(doc, trimmed, CW, 9);
-      ensureSpace(h + 6);
-      y += 2;
+    // Note méthodologique
+    if (isNote(t)) {
+      const h = blockHeight(doc, t, CW, 9);
+      fit(h + 8);
+      y += 3;
       doc.setDrawColor(...VIOLET_MID);
       doc.setLineWidth(0.2);
-      doc.line(ML, y - 2, ML + CW, y - 2);
-      doc.setFont("Helvetica", "italic");
-      doc.setFontSize(9);
-      doc.setTextColor(...VIOLET_MID);
-      const lines = doc.splitTextToSize(trimmed, CW);
-      doc.text(lines, ML, y + 2);
-      y += h + 6;
+      doc.line(ML, y - 1, ML + CW, y - 1);
+      y += 2;
+      write(t, { size: 9, style: "italic", color: VIOLET_MID, gap: 4 });
       continue;
     }
 
-    // ── Paragraphe normal ──
-    const h = blockHeight(doc, trimmed, CW, 11);
-    ensureSpace(h + 4);
-    doc.setFont("Helvetica", "normal");
-    doc.setFontSize(11);
-    doc.setTextColor(...DARK);
-    const lines = doc.splitTextToSize(trimmed, CW);
-    doc.text(lines, ML, y);
-    y += h + 4;
+    // Paragraphe normal du corps
+    write(t, { size: 11, style: "normal", color: DARK, gap: 5 });
   }
 
   addPageFooter(doc);

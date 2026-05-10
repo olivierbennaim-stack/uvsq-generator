@@ -9,10 +9,8 @@ interface SubjectDisplayProps {
   correctionLoading: boolean;
 }
 
-/**
- * Regroupe les lignes consécutives non vides en un seul paragraphe.
- * Seules les lignes vides créent une vraie rupture de paragraphe.
- */
+const BLOCK_STARTERS = /^(\d+[\.\)]\s|•|►)/;
+
 function collapseBlocks(text: string): string[] {
   const paragraphs: string[] = [];
   let current: string[] = [];
@@ -20,10 +18,10 @@ function collapseBlocks(text: string): string[] {
   for (const raw of text.split("\n")) {
     const line = raw.trim();
     if (line === "") {
-      if (current.length > 0) {
-        paragraphs.push(current.join(" "));
-        current = [];
-      }
+      if (current.length > 0) { paragraphs.push(current.join(" ")); current = []; }
+    } else if (BLOCK_STARTERS.test(line) && current.length > 0) {
+      paragraphs.push(current.join(" "));
+      current = [line];
     } else {
       current.push(line);
     }
