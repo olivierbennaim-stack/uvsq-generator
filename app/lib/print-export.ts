@@ -28,29 +28,44 @@ function escHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+function mdHtml(s: string): string {
+  return escHtml(s)
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/__(.+?)__/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/_(.+?)_/g, "<em>$1</em>");
+}
+
+function stripHeading(s: string): { text: string; isHeading: boolean } {
+  const m = s.match(/^#{1,3}\s+(.+)$/);
+  if (m) return { text: m[1].trim(), isHeading: true };
+  return { text: s, isHeading: false };
+}
+
 function blocksToHtml(blocks: string[], isCorrection: boolean): string {
   const lines: string[] = [];
   let questionsStarted = false;
 
   for (const block of blocks) {
-    const t = block.trim();
-    if (!t) continue;
-    const esc = escHtml(t);
+    const raw = block.trim();
+    if (!raw) continue;
+
+    const { text: t, isHeading } = stripHeading(raw);
 
     const isQ      = /^\d+[\.\)]\s/.test(t);
-    const isSec    = /^QUESTION\s+\d+/i.test(t);
+    const isSec    = isHeading || /^QUESTION\s+\d+/i.test(t);
     const isPdV    = t.startsWith("►");
-    const isBullet = t.startsWith("•");
+    const isBullet = t.startsWith("•") || t.startsWith("- ");
     const isNote   = t.startsWith("Note méthodologique");
     const isSource = /^(Slate|Le Monde|Libération|Le Figaro|L'Obs|La Croix|Mediapart|Les Échos|Courrier|Le Parisien|Philosophie|Sciences)/i.test(t);
 
     if (isSec) {
-      lines.push(`<div class="section-hdr">${esc}</div>`);
+      lines.push(`<div class="section-hdr">${mdHtml(t)}</div>`);
       continue;
     }
 
     if (isSource) {
-      lines.push(`<p class="source">${esc}</p>`);
+      lines.push(`<p class="source">${mdHtml(t)}</p>`);
       continue;
     }
 
@@ -60,27 +75,27 @@ function blocksToHtml(blocks: string[], isCorrection: boolean): string {
     }
 
     if (isQ) {
-      lines.push(`<p class="question">${esc}</p>`);
+      lines.push(`<p class="question">${mdHtml(t)}</p>`);
       continue;
     }
 
     if (isPdV) {
-      lines.push(`<p class="point-de-vue">${esc}</p>`);
+      lines.push(`<p class="point-de-vue">${mdHtml(t)}</p>`);
       continue;
     }
 
     if (isBullet) {
-      const inner = escHtml(t.slice(1).trim());
-      lines.push(`<div class="bullet"><span class="bullet-dot">•</span><span>${inner}</span></div>`);
+      const inner = t.startsWith("•") ? t.slice(1).trim() : t.slice(2).trim();
+      lines.push(`<div class="bullet"><span class="bullet-dot">•</span><span>${mdHtml(inner)}</span></div>`);
       continue;
     }
 
     if (isNote) {
-      lines.push(`<p class="note">${esc}</p>`);
+      lines.push(`<p class="note">${mdHtml(t)}</p>`);
       continue;
     }
 
-    lines.push(`<p class="body">${esc}</p>`);
+    lines.push(`<p class="body">${mdHtml(t)}</p>`);
   }
 
   return lines.join("\n");

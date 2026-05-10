@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import LogoOralPrepa from "./LogoOralPrepa";
+import { mdToReact, normalizeBlock } from "@/app/lib/markdown";
 
 interface CorrectionDisplayProps {
   correctionText: string;
@@ -15,17 +16,19 @@ function renderCorrectionText(text: string) {
   let key = 0;
 
   for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) {
-      elements.push(<div key={key++} className="h-3" />);
+    const raw = line.trim();
+    if (!raw) {
+      elements.push(<div key={key++} className="h-2" />);
       continue;
     }
 
-    // Section headers like "QUESTION 1 —"
-    if (/^QUESTION\s+\d+/i.test(trimmed)) {
+    const { text: trimmed, isHeading } = normalizeBlock(raw);
+
+    // ## Heading markdown → section header
+    if (isHeading || /^QUESTION\s+\d+/i.test(trimmed)) {
       elements.push(
         <h3 key={key++} className="font-bold text-[#4e3bf0] text-xs uppercase tracking-widest border-b border-[#4e3bf0] pb-1 mt-5 mb-3">
-          {trimmed}
+          {mdToReact(trimmed)}
         </h3>
       );
       continue;
@@ -35,18 +38,19 @@ function renderCorrectionText(text: string) {
     if (trimmed.startsWith("►")) {
       elements.push(
         <p key={key++} className="font-semibold text-[#4e3bf0] text-sm mt-4 mb-1">
-          {trimmed}
+          {mdToReact(trimmed)}
         </p>
       );
       continue;
     }
 
-    // Bullet points
-    if (trimmed.startsWith("•")) {
+    // Bullet points • or -
+    if (trimmed.startsWith("•") || trimmed.startsWith("- ")) {
+      const inner = trimmed.startsWith("•") ? trimmed.slice(1).trim() : trimmed.slice(2).trim();
       elements.push(
         <div key={key++} className="flex gap-2 text-sm text-[#1a1a2e] leading-relaxed">
           <span className="text-[#4e3bf0] mt-0.5 flex-shrink-0">•</span>
-          <span>{trimmed.slice(1).trim()}</span>
+          <span>{mdToReact(inner)}</span>
         </div>
       );
       continue;
@@ -56,7 +60,7 @@ function renderCorrectionText(text: string) {
     if (trimmed.startsWith("Note méthodologique")) {
       elements.push(
         <p key={key++} className="text-xs text-[#7060d0] italic mt-4 pt-3 border-t border-[#c5bffa] leading-relaxed">
-          {trimmed}
+          {mdToReact(trimmed)}
         </p>
       );
       continue;
@@ -65,7 +69,7 @@ function renderCorrectionText(text: string) {
     // Regular paragraph
     elements.push(
       <p key={key++} className="text-sm text-[#1a1a2e] leading-relaxed">
-        {trimmed}
+        {mdToReact(trimmed)}
       </p>
     );
   }

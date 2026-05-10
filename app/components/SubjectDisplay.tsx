@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import LogoOralPrepa from "./LogoOralPrepa";
+import { mdToReact, normalizeBlock } from "@/app/lib/markdown";
 
 interface SubjectDisplayProps {
   subjectText: string;
@@ -122,11 +123,21 @@ export default function SubjectDisplay({
 
           {/* Body */}
           <div className="space-y-4 mb-8">
-            {bodyLines.map((para, i) => (
-              <p key={i} className="font-serif text-[15px] leading-[1.8] text-[#1a1a2e]">
-                {para}
-              </p>
-            ))}
+            {bodyLines.map((para, i) => {
+              const { text, isHeading } = normalizeBlock(para);
+              if (isHeading) {
+                return (
+                  <p key={i} className="font-serif text-[15px] leading-[1.8] text-[#1a1a2e] font-bold">
+                    {mdToReact(text)}
+                  </p>
+                );
+              }
+              return (
+                <p key={i} className="font-serif text-[15px] leading-[1.8] text-[#1a1a2e]">
+                  {mdToReact(text)}
+                </p>
+              );
+            })}
           </div>
 
           {/* Questions */}
@@ -138,7 +149,7 @@ export default function SubjectDisplay({
               <div className="space-y-3">
                 {questions.map((q, i) => (
                   <p key={i} className="text-sm font-medium text-[#1a1a2e] leading-relaxed">
-                    {q}
+                    {mdToReact(normalizeBlock(q).text)}
                   </p>
                 ))}
               </div>
