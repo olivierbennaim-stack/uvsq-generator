@@ -55,106 +55,185 @@ function addPageFooter(doc: jsPDF) {
   );
 }
 
-export function generatePDF(options: PDFOptions): jsPDF {
-  const { title, subtitle, body } = options;
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+const LINE_HEIGHT = 5.8;
+const HEADER_H = 20;
+const FOOTER_H = 12;
 
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const marginLeft = 20;
-  const marginRight = 20;
-  const marginTop = 26; // after header band (18mm) + gap
-  const marginBottom = 18; // before footer band
-  const contentWidth = pageWidth - marginLeft - marginRight;
-  let y = marginTop;
-
-  addPageHeader(doc, subtitle);
-
-  // Title
-  y = 26;
-  doc.setFont("Helvetica", "bold");
-  doc.setFontSize(14);
-  doc.setTextColor(...VIOLET);
-  const titleLines = doc.splitTextToSize(title, contentWidth);
-  doc.text(titleLines, marginLeft, y);
-  y += titleLines.length * 6.5 + 2;
-
-  // Underline under title
-  doc.setDrawColor(...VIOLET);
-  doc.setLineWidth(0.5);
-  doc.line(marginLeft, y, marginLeft + Math.min(contentWidth, title.length * 2.8), y);
-  y += 6;
-
-  // Body
-  doc.setFont("Helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(...DARK);
-
-  // Regrouper les lignes consécutives non vides en vrais paragraphes
-  const rawBlocks: string[] = [];
+function collapseToBlocks(text: string): string[] {
+  const blocks: string[] = [];
   let current: string[] = [];
-  for (const raw of body.split("\n")) {
+  for (const raw of text.split("\n")) {
     const line = raw.trim();
     if (line === "") {
-      if (current.length > 0) { rawBlocks.push(current.join(" ")); current = []; }
+      if (current.length > 0) { blocks.push(current.join(" ")); current = []; }
     } else {
       current.push(line);
     }
   }
-  if (current.length > 0) rawBlocks.push(current.join(" "));
-  const paragraphs = rawBlocks.filter((p) => p.length > 0);
+  if (current.length > 0) blocks.push(current.join(" "));
+  return blocks.filter((b) => b.length > 0);
+}
 
-  for (const paragraph of paragraphs) {
-    const trimmed = paragraph.trim();
-    const isQuestion = /^\d+[\.\)]/.test(trimmed);
-    const isSectionHeader = /^QUESTION\s+\d+/i.test(trimmed);
-    const isBullet = trimmed.startsWith("•") || trimmed.startsWith("►");
-    const isNote = trimmed.startsWith("Note méthodologique");
+function blockHeight(doc: jsPDF, text: string, width: number, fontSize: number): number {
+  doc.setFontSize(fontSize);
+  const lines = doc.splitTextToSize(text, width);
+  return lines.length * LINE_HEIGHT;
+}
 
-    if (isSectionHeader) {
+export function generatePDF(options: PDFOptions): jsPDF {
+  const { title, subtitle, body } = options;
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+  const PW = doc.internal.pageSize.getWidth();
+  const PH = doc.internal.pageSize.getHeight();
+  const ML = 20;
+  const MR = 20;
+  const CW = PW - ML - MR;
+  const CONTENT_TOP = HEADER_H + 8;
+  const CONTENT_BOTTOM = PH - FOOTER_H - 4;
+
+  let y = CONTENT_TOP;
+
+  const newPage = () => {
+    addPageFooter(doc);
+    doc.addPage();
+    addPageHeader(doc, subtitle);
+    y = CONTENT_TOP;
+  };
+
+  const ensureSpace = (needed: number) => {
+    if (y + needed > CONTENT_BOTTOM) newPage();
+  };
+
+  addPageHeader(doc, subtitle);
+
+  // ── Titre ──────────────────────────────────────────────
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(...VIOLET);
+  const titleLines = doc.splitTextToSize(title, CW);
+  const titleH = titleLines.length * 7;
+  ensureSpace(titleH + 8);
+  doc.text(titleLines, ML, y);
+  y += titleH + 1;
+
+  // Trait sous titre
+  doc.setDrawColor(...VIOLET);
+  doc.setLineWidth(0.5);
+  doc.line(ML, y, ML + CW, y);
+  y += 7;
+
+  // ── Corps ──────────────────────────────────────────────
+  const blocks = collapseToBlocks(body);
+
+  for (const block of blocks) {
+    const trimmed = block.trim();
+    if (!trimmed) continue;
+
+    const isQuestion    = /^\d+[\.\)]\s/.test(trimmed);
+    const isSectionHdr  = /^QUESTION\s+\d+/i.test(trimmed);
+    const isPointDeVue  = trimmed.startsWith("►");
+    const isBullet      = trimmed.startsWith("•");
+    const isNote        = trimmed.startsWith("Note méthodologique");
+    const isSource      = /^(Slate|Le Monde|Libération|Le Figaro|L'Obs|La Croix|Mediapart|Les Échos|Courrier|Le Parisien|Philosophie|Sciences)/i.test(trimmed);
+
+    // ── En-tête de section (QUESTION 1 —) ──
+    if (isSectionHdr) {
+      const h = blockHeight(doc, trimmed, CW, 9);
+      ensureSpace(h + 10);
+      if (y > CONTENT_TOP + 2) y += 4;
+      doc.setFillColor(...VIOLET_LIGHT);
+      doc.roundedRect(ML, y - 5, CW, h + 7, 2, 2, "F");
       doc.setFont("Helvetica", "bold");
       doc.setFontSize(9);
       doc.setTextColor(...VIOLET);
-    } else if (isQuestion) {
+      const lines = doc.splitTextToSize(trimmed, CW - 4);
+      doc.text(lines, ML + 4, y);
+      y += h + 6;
+      continue;
+    }
+
+    // ── Source (italique violet) ──
+    if (isSource) {
+      const h = blockHeight(doc, trimmed, CW, 10);
+      ensureSpace(h + 4);
+      doc.setFont("Helvetica", "italic");
+      doc.setFontSize(10);
+      doc.setTextColor(...VIOLET_MID);
+      const lines = doc.splitTextToSize(trimmed, CW);
+      doc.text(lines, ML, y);
+      y += h + 5;
+      continue;
+    }
+
+    // ── Questions d'analyse (numérotées) ──
+    if (isQuestion) {
+      const h = blockHeight(doc, trimmed, CW, 10.5);
+      ensureSpace(h + 4);
       doc.setFont("Helvetica", "bold");
       doc.setFontSize(10.5);
       doc.setTextColor(...DARK);
-    } else if (isBullet) {
+      const lines = doc.splitTextToSize(trimmed, CW);
+      doc.text(lines, ML, y);
+      y += h + 3;
+      continue;
+    }
+
+    // ── Point de vue ──
+    if (isPointDeVue) {
+      const h = blockHeight(doc, trimmed, CW, 10.5);
+      ensureSpace(h + 4);
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(...VIOLET);
+      const lines = doc.splitTextToSize(trimmed, CW);
+      doc.text(lines, ML, y);
+      y += h + 3;
+      continue;
+    }
+
+    // ── Bullet ──
+    if (isBullet) {
+      const innerText = trimmed.slice(1).trim();
+      const h = blockHeight(doc, innerText, CW - 6, 10.5);
+      ensureSpace(h + 3);
       doc.setFont("Helvetica", "normal");
       doc.setFontSize(10.5);
+      doc.setTextColor(...VIOLET);
+      doc.text("•", ML, y);
       doc.setTextColor(...DARK);
-    } else if (isNote) {
+      const lines = doc.splitTextToSize(innerText, CW - 6);
+      doc.text(lines, ML + 5, y);
+      y += h + 3;
+      continue;
+    }
+
+    // ── Note méthodologique ──
+    if (isNote) {
+      const h = blockHeight(doc, trimmed, CW, 9);
+      ensureSpace(h + 6);
+      y += 2;
+      doc.setDrawColor(...VIOLET_MID);
+      doc.setLineWidth(0.2);
+      doc.line(ML, y - 2, ML + CW, y - 2);
       doc.setFont("Helvetica", "italic");
       doc.setFontSize(9);
       doc.setTextColor(...VIOLET_MID);
-    } else {
-      doc.setFont("Helvetica", "normal");
-      doc.setFontSize(11);
-      doc.setTextColor(...DARK);
+      const lines = doc.splitTextToSize(trimmed, CW);
+      doc.text(lines, ML, y + 2);
+      y += h + 6;
+      continue;
     }
 
-    const lines = doc.splitTextToSize(trimmed, contentWidth);
-    const blockHeight = lines.length * 5.5;
-    const extraSpacing = isSectionHeader ? 4 : 0;
-
-    if (y + blockHeight + extraSpacing > pageHeight - marginBottom) {
-      addPageFooter(doc);
-      doc.addPage();
-      addPageHeader(doc, subtitle);
-      y = marginTop;
-    }
-
-    if (isSectionHeader && y > marginTop + 2) y += 3;
-    doc.text(lines, marginLeft, y);
-    y += blockHeight + (isSectionHeader ? 5 : 4);
-
-    // Trait sous les en-têtes de section
-    if (isSectionHeader) {
-      doc.setDrawColor(...VIOLET);
-      doc.setLineWidth(0.3);
-      doc.line(marginLeft, y - 2, marginLeft + contentWidth, y - 2);
-      y += 1;
-    }
+    // ── Paragraphe normal ──
+    const h = blockHeight(doc, trimmed, CW, 11);
+    ensureSpace(h + 4);
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(...DARK);
+    const lines = doc.splitTextToSize(trimmed, CW);
+    doc.text(lines, ML, y);
+    y += h + 4;
   }
 
   addPageFooter(doc);

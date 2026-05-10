@@ -1,5 +1,7 @@
 "use client";
 
+import LogoOralPrepa from "./LogoOralPrepa";
+
 interface SubjectDisplayProps {
   subjectText: string;
   onGenerateCorrection: () => void;
@@ -87,8 +89,8 @@ export default function SubjectDisplay({
       <div className="bg-[#ebe9ff] shadow-lg rounded-xl overflow-hidden border border-[#c5bffa]">
         {/* Logo header */}
         <div className="bg-[#ebe9ff] px-8 sm:px-12 pt-7 pb-3 flex items-center justify-between">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-oral-prepa.svg" alt="Oral Prépa" className="h-9" />
+          
+          <LogoOralPrepa className="h-10" />
           <span className="text-xs uppercase tracking-widest text-[#7060d0] font-medium">
             UVSQ — PASS/LAS
           </span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import LogoOralPrepa from "./components/LogoOralPrepa";
 import ThemeSuggestions from "./components/ThemeSuggestions";
 import CustomTopicInput from "./components/CustomTopicInput";
 import SubjectDisplay from "./components/SubjectDisplay";
@@ -179,8 +180,8 @@ export default function Home() {
       <header className="border-b border-[#c5bffa] bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-oral-prepa.svg" alt="Oral Prépa" className="h-10" />
+            
+            <LogoOralPrepa className="h-10" />
             <div className="border-l border-[#c5bffa] pl-4">
               <p className="text-xs font-semibold text-[#4e3bf0] uppercase tracking-wide leading-none">Analyse de texte</p>
               <p className="text-[11px] text-[#7060d0] mt-0.5">UVSQ — PASS/LAS</p>

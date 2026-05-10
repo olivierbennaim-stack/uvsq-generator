@@ -1,5 +1,7 @@
 "use client";
 
+import LogoOralPrepa from "./LogoOralPrepa";
+
 interface CorrectionDisplayProps {
   correctionText: string;
   onDownloadPDF: () => void;
@@ -75,8 +77,8 @@ export default function CorrectionDisplay({ correctionText, onDownloadPDF }: Cor
       <div className="bg-[#ebe9ff] border border-[#c5bffa] rounded-xl overflow-hidden">
         {/* Logo header */}
         <div className="px-6 sm:px-8 pt-6 pb-3 flex items-center justify-between">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-oral-prepa.svg" alt="Oral Prépa" className="h-8" />
+          
+          <LogoOralPrepa className="h-9" />
           <span className="text-xs uppercase tracking-widest text-[#7060d0] font-medium">
             Corrigé modèle
           </span>
