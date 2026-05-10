@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import LogoOralPrepa from "./LogoOralPrepa";
 
 interface SubjectDisplayProps {
@@ -82,6 +83,13 @@ export default function SubjectDisplay({
   correctionLoading,
 }: SubjectDisplayProps) {
   const { title, source, bodyLines, questions } = parseSubject(subjectText);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    onCopy();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="w-full">
@@ -147,28 +155,28 @@ export default function SubjectDisplay({
       </div>
 
       {/* Actions */}
-      <div className="flex flex-col sm:flex-row gap-3 mt-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
         <button
           onClick={onPrint}
-          className="flex-1 flex items-center justify-center gap-2 px-5 py-3 border border-[#4e3bf0] text-[#4e3bf0] rounded-lg font-medium text-sm hover:bg-[#4e3bf0]/5 transition-colors"
+          className="flex items-center justify-center gap-2 px-5 py-3 border border-[#4e3bf0] text-[#4e3bf0] rounded-lg font-medium text-sm hover:bg-[#4e3bf0]/5 transition-colors"
         >
           <span>📄</span>
           Exporter en PDF
         </button>
         <button
-          onClick={onCopy}
+          onClick={handleCopy}
           className="flex items-center justify-center gap-2 px-5 py-3 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:border-[#4e3bf0]/40 hover:text-[#4e3bf0] transition-colors"
         >
-          <span>📋</span>
-          Copier
+          <span>{copied ? "✅" : "📋"}</span>
+          {copied ? "Copié !" : "Copier"}
         </button>
         <button
           onClick={onGenerateCorrection}
           disabled={correctionLoading}
-          className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-[#4e3bf0] text-white rounded-lg font-medium text-sm disabled:opacity-50 hover:bg-[#3d2cd0] transition-colors"
+          className="flex items-center justify-center gap-2 px-5 py-3 bg-[#4e3bf0] text-white rounded-lg font-medium text-sm disabled:opacity-50 hover:bg-[#3d2cd0] transition-colors"
         >
           <span>✏️</span>
-          {correctionLoading ? "Génération en cours…" : "Générer le corrigé"}
+          {correctionLoading ? "Génération…" : "Générer le corrigé"}
         </button>
       </div>
     </div>

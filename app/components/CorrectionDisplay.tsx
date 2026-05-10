@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import LogoOralPrepa from "./LogoOralPrepa";
 
 interface CorrectionDisplayProps {
@@ -73,6 +74,13 @@ function renderCorrectionText(text: string) {
 }
 
 export default function CorrectionDisplay({ correctionText, onPrint, onCopy }: CorrectionDisplayProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    onCopy();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
   return (
     <div className="w-full">
       <div className="bg-[#ebe9ff] border border-[#c5bffa] rounded-xl overflow-hidden">
@@ -100,7 +108,7 @@ export default function CorrectionDisplay({ correctionText, onPrint, onCopy }: C
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
         <button
           onClick={onPrint}
           className="flex items-center justify-center gap-2 px-5 py-3 border border-[#4e3bf0] text-[#4e3bf0] rounded-lg font-medium text-sm hover:bg-[#4e3bf0]/5 transition-colors"
@@ -109,11 +117,11 @@ export default function CorrectionDisplay({ correctionText, onPrint, onCopy }: C
           Exporter en PDF
         </button>
         <button
-          onClick={onCopy}
+          onClick={handleCopy}
           className="flex items-center justify-center gap-2 px-5 py-3 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:border-[#4e3bf0]/40 hover:text-[#4e3bf0] transition-colors"
         >
-          <span>📋</span>
-          Copier
+          <span>{copied ? "✅" : "📋"}</span>
+          {copied ? "Copié !" : "Copier"}
         </button>
       </div>
     </div>
