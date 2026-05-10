@@ -84,53 +84,63 @@ export default function SubjectDisplay({
   return (
     <div className="w-full">
       {/* A4-style paper */}
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-100">
-        <div className="px-8 sm:px-12 py-8 sm:py-10">
-          {/* Header badge */}
-          <div className="text-center mb-8">
-            <span className="text-xs uppercase tracking-widest text-gray-400 font-medium">
-              UVSQ — PASS/LAS — Analyse de texte
-            </span>
-          </div>
+      <div className="bg-[#ebe9ff] shadow-lg rounded-xl overflow-hidden border border-[#c5bffa]">
+        {/* Logo header */}
+        <div className="bg-[#ebe9ff] px-8 sm:px-12 pt-7 pb-3 flex items-center justify-between">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-oral-prepa.svg" alt="Oral Prépa" className="h-9" />
+          <span className="text-xs uppercase tracking-widest text-[#7060d0] font-medium">
+            UVSQ — PASS/LAS
+          </span>
+        </div>
 
+        {/* Separator */}
+        <div className="mx-8 sm:mx-12 border-t border-[#4e3bf0] opacity-20" />
+
+        <div className="px-8 sm:px-12 py-7 sm:py-9 bg-white">
           {/* Title */}
           {title && (
-            <h2 className="font-serif text-xl sm:text-2xl font-bold text-gray-900 leading-tight mb-2">
+            <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#1a1a2e] leading-tight mb-2">
               {title}
             </h2>
           )}
 
           {/* Source */}
           {source && (
-            <p className="text-sm text-gray-500 italic mb-6">{source}</p>
+            <p className="text-sm text-[#7060d0] italic mb-7">{source}</p>
           )}
 
           {/* Body */}
           <div className="space-y-4 mb-8">
             {bodyLines.map((para, i) => (
-              <p key={i} className="font-serif text-[15px] leading-[1.8] text-gray-800">
+              <p key={i} className="font-serif text-[15px] leading-[1.8] text-[#1a1a2e]">
                 {para}
               </p>
             ))}
           </div>
 
-          {/* Questions separator */}
+          {/* Questions */}
           {questions.length > 0 && (
-            <>
-              <div className="border-t border-gray-200 pt-6">
-                <p className="text-xs uppercase tracking-widest text-gray-400 font-medium mb-4">
-                  Questions d&apos;analyse
-                </p>
-                <div className="space-y-3">
-                  {questions.map((q, i) => (
-                    <p key={i} className="text-sm font-medium text-gray-800 leading-relaxed">
-                      {q}
-                    </p>
-                  ))}
-                </div>
+            <div className="border-t border-[#4e3bf0]/20 pt-6">
+              <p className="text-xs uppercase tracking-widest text-[#4e3bf0] font-bold mb-4">
+                Questions d&apos;analyse
+              </p>
+              <div className="space-y-3">
+                {questions.map((q, i) => (
+                  <p key={i} className="text-sm font-medium text-[#1a1a2e] leading-relaxed">
+                    {q}
+                  </p>
+                ))}
               </div>
-            </>
+            </div>
           )}
+        </div>
+
+        {/* Footer brand */}
+        <div className="bg-[#ebe9ff] px-8 sm:px-12 py-3 text-center">
+          <p className="text-[10px] text-[#7060d0] italic">
+            © Oral Prépa – Toute reproduction ou diffusion, même partielle, est strictement interdite sans autorisation préalable
+          </p>
         </div>
       </div>
 
@@ -138,7 +148,7 @@ export default function SubjectDisplay({
       <div className="flex flex-col sm:flex-row gap-3 mt-5">
         <button
           onClick={onDownloadPDF}
-          className="flex-1 flex items-center justify-center gap-2 px-5 py-3 border border-[#1a365d] text-[#1a365d] rounded-lg font-medium text-sm hover:bg-[#1a365d]/5 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-5 py-3 border border-[#4e3bf0] text-[#4e3bf0] rounded-lg font-medium text-sm hover:bg-[#4e3bf0]/5 transition-colors"
         >
           <span>📄</span>
           Télécharger le sujet (PDF)
@@ -146,7 +156,7 @@ export default function SubjectDisplay({
         <button
           onClick={onGenerateCorrection}
           disabled={correctionLoading}
-          className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-[#1a365d] text-white rounded-lg font-medium text-sm disabled:opacity-50 hover:bg-[#1e3f6f] transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-[#4e3bf0] text-white rounded-lg font-medium text-sm disabled:opacity-50 hover:bg-[#3d2cd0] transition-colors"
         >
           <span>✏️</span>
           {correctionLoading ? "Génération en cours…" : "Générer le corrigé"}

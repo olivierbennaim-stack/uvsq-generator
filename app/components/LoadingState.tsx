@@ -22,11 +22,11 @@ export default function LoadingState({ label }: { label?: string }) {
   return (
     <div className="flex flex-col items-center gap-6 py-16">
       <div className="relative w-12 h-12">
-        <div className="absolute inset-0 rounded-full border-2 border-[#1a365d]/20"></div>
-        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#1a365d] animate-spin"></div>
+        <div className="absolute inset-0 rounded-full border-2 border-[#4e3bf0]/20"></div>
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#4e3bf0] animate-spin"></div>
       </div>
       <div className="text-center">
-        <p className="text-sm font-medium text-[#1a365d] tracking-wide">
+        <p className="text-sm font-medium text-[#4e3bf0] tracking-wide">
           {label ?? messages[msgIndex]}
         </p>
         <p className="text-xs text-gray-400 mt-1">Cela peut prendre 15 à 30 secondes</p>

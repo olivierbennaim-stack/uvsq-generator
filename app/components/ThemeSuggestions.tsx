@@ -31,16 +31,16 @@ export default function ThemeSuggestions({
             onClick={() => onSelect(theme.title)}
             className={`w-full text-left p-4 sm:p-5 rounded-lg border transition-all duration-200 group ${
               selected === theme.title
-                ? "border-[#1a365d] bg-[#1a365d]/5 shadow-sm"
-                : "border-gray-200 bg-white hover:border-[#1a365d]/40 hover:shadow-sm"
+                ? "border-[#4e3bf0] bg-[#4e3bf0]/5 shadow-sm"
+                : "border-gray-200 bg-white hover:border-[#4e3bf0]/40 hover:shadow-sm"
             }`}
           >
             <div className="flex items-start gap-3">
               <div
                 className={`mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 transition-colors ${
                   selected === theme.title
-                    ? "border-[#1a365d] bg-[#1a365d]"
-                    : "border-gray-300 group-hover:border-[#1a365d]/50"
+                    ? "border-[#4e3bf0] bg-[#4e3bf0]"
+                    : "border-gray-300 group-hover:border-[#4e3bf0]/50"
                 }`}
               >
                 {selected === theme.title && (
@@ -66,7 +66,7 @@ export default function ThemeSuggestions({
         <button
           onClick={onValidate}
           disabled={!selected || loading}
-          className="flex-1 px-6 py-3 bg-[#1a365d] text-white rounded-lg font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#1e3f6f] transition-colors"
+          className="flex-1 px-6 py-3 bg-[#4e3bf0] text-white rounded-lg font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#3d2cd0] transition-colors"
         >
           Générer ce sujet
         </button>

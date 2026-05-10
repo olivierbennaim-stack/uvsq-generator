@@ -174,20 +174,22 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f8f7f4]">
+    <main className="min-h-screen bg-[#ebe9ff]/40">
       {/* Header */}
-      <header className="border-b border-gray-200 bg-white">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="font-serif text-lg sm:text-xl font-bold text-gray-900 leading-tight">
-              Générateur UVSQ
-            </h1>
-            <p className="text-xs text-gray-500 mt-0.5">Analyse de texte — PASS/LAS</p>
+      <header className="border-b border-[#c5bffa] bg-white">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-oral-prepa.svg" alt="Oral Prépa" className="h-10" />
+            <div className="border-l border-[#c5bffa] pl-4">
+              <p className="text-xs font-semibold text-[#4e3bf0] uppercase tracking-wide leading-none">Analyse de texte</p>
+              <p className="text-[11px] text-[#7060d0] mt-0.5">UVSQ — PASS/LAS</p>
+            </div>
           </div>
           {appState !== "home" && (
             <button
               onClick={reset}
-              className="text-sm text-[#1a365d] hover:text-[#1e3f6f] font-medium flex items-center gap-1.5 transition-colors"
+              className="text-sm text-[#4e3bf0] hover:text-[#3d2cd0] font-medium flex items-center gap-1.5 transition-colors"
             >
               <span>←</span>
               Nouveau sujet
@@ -222,7 +224,7 @@ export default function Home() {
                 onClick={() => setActiveTab("suggest")}
                 className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === "suggest"
-                    ? "border-[#1a365d] text-[#1a365d]"
+                    ? "border-[#4e3bf0] text-[#4e3bf0]"
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
@@ -232,7 +234,7 @@ export default function Home() {
                 onClick={() => setActiveTab("custom")}
                 className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === "custom"
-                    ? "border-[#1a365d] text-[#1a365d]"
+                    ? "border-[#4e3bf0] text-[#4e3bf0]"
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
@@ -248,7 +250,7 @@ export default function Home() {
                 <button
                   onClick={loadThemes}
                   disabled={themesLoading}
-                  className="px-8 py-3 bg-[#1a365d] text-white rounded-lg font-medium text-sm disabled:opacity-50 hover:bg-[#1e3f6f] transition-colors"
+                  className="px-8 py-3 bg-[#4e3bf0] text-white rounded-lg font-medium text-sm disabled:opacity-50 hover:bg-[#3d2cd0] transition-colors"
                 >
                   {themesLoading ? "Recherche en cours…" : "Suggérer des thèmes"}
                 </button>
