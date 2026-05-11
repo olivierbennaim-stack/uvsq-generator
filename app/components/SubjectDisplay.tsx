@@ -97,18 +97,17 @@ export default function SubjectDisplay({
       {/* A4-style paper */}
       <div className="bg-[#ebe9ff] shadow-lg rounded-xl overflow-hidden border border-[#c5bffa]">
         {/* Logo header */}
-        <div className="bg-[#ebe9ff] px-8 sm:px-12 pt-7 pb-3 flex items-center justify-between">
-          
-          <LogoOralPrepa className="h-10" />
+        <div className="bg-[#ebe9ff] px-4 sm:px-8 md:px-12 pt-5 sm:pt-7 pb-3 flex items-center justify-between">
+          <LogoOralPrepa className="h-8 sm:h-10" />
           <span className="text-xs uppercase tracking-widest text-[#7060d0] font-medium">
             UVSQ — PASS/LAS
           </span>
         </div>
 
         {/* Separator */}
-        <div className="mx-8 sm:mx-12 border-t border-[#4e3bf0] opacity-20" />
+        <div className="mx-4 sm:mx-8 md:mx-12 border-t border-[#4e3bf0] opacity-20" />
 
-        <div className="px-8 sm:px-12 py-7 sm:py-9 bg-white">
+        <div className="px-4 sm:px-8 md:px-12 py-5 sm:py-8 bg-white">
           {/* Title */}
           {title && (
             <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#1a1a2e] leading-tight mb-2">
@@ -158,7 +157,7 @@ export default function SubjectDisplay({
         </div>
 
         {/* Footer brand */}
-        <div className="bg-[#ebe9ff] px-8 sm:px-12 py-3 text-center">
+        <div className="bg-[#ebe9ff] px-4 sm:px-8 py-3 text-center">
           <p className="text-[10px] text-[#7060d0] italic">
             © Oral Prépa – Toute reproduction ou diffusion, même partielle, est strictement interdite sans autorisation préalable
           </p>

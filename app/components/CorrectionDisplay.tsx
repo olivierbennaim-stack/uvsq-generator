@@ -89,23 +89,22 @@ export default function CorrectionDisplay({ correctionText, onPrint, onCopy }: C
     <div className="w-full">
       <div className="bg-[#ebe9ff] border border-[#c5bffa] rounded-xl overflow-hidden">
         {/* Logo header */}
-        <div className="px-6 sm:px-8 pt-6 pb-3 flex items-center justify-between">
-          
-          <LogoOralPrepa className="h-9" />
+        <div className="px-4 sm:px-8 pt-5 sm:pt-6 pb-3 flex items-center justify-between">
+          <LogoOralPrepa className="h-8 sm:h-9" />
           <span className="text-xs uppercase tracking-widest text-[#7060d0] font-medium">
             Corrigé modèle
           </span>
         </div>
-        <div className="mx-6 sm:mx-8 border-t border-[#4e3bf0] opacity-20 mb-0" />
+        <div className="mx-4 sm:mx-8 border-t border-[#4e3bf0] opacity-20 mb-0" />
 
-        <div className="px-6 sm:px-8 py-6 sm:py-8 bg-white">
+        <div className="px-4 sm:px-8 py-5 sm:py-8 bg-white">
           <div className="space-y-1.5">
             {renderCorrectionText(correctionText)}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="bg-[#ebe9ff] px-6 sm:px-8 py-3 text-center">
+        <div className="bg-[#ebe9ff] px-4 sm:px-8 py-3 text-center">
           <p className="text-[10px] text-[#7060d0] italic">
             © Oral Prépa – Toute reproduction ou diffusion, même partielle, est strictement interdite sans autorisation préalable
           </p>

@@ -190,13 +190,13 @@ export default function Home() {
       {/* Header */}
       <header className="border-b border-[#c5bffa] bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            
-            <LogoOralPrepa className="h-10" />
-            <div className="border-l border-[#c5bffa] pl-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <LogoOralPrepa className="h-8 sm:h-10" />
+            <div className="hidden sm:block border-l border-[#c5bffa] pl-4">
               <p className="text-xs font-semibold text-[#4e3bf0] uppercase tracking-wide leading-none">Analyse de texte</p>
               <p className="text-[11px] text-[#7060d0] mt-0.5">UVSQ — PASS/LAS</p>
             </div>
+            <span className="sm:hidden text-xs font-semibold text-[#4e3bf0] uppercase tracking-wide">UVSQ</span>
           </div>
           {appState !== "home" && (
             <button
@@ -204,7 +204,8 @@ export default function Home() {
               className="text-sm text-[#4e3bf0] hover:text-[#3d2cd0] font-medium flex items-center gap-1.5 transition-colors"
             >
               <span>←</span>
-              Nouveau sujet
+              <span className="hidden sm:inline">Nouveau sujet</span>
+              <span className="sm:hidden">Retour</span>
             </button>
           )}
         </div>
